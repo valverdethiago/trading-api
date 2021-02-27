@@ -1,0 +1,2 @@
+CREATE TYPE trade_status as ENUM ('SUBMITTED', 'CANCELLED', 'COMPLETED', 'FAILED');
+CREATE TYPE trade_side as ENUM ('BUY', 'SELL');
