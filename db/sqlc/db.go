@@ -25,6 +25,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createAccountStmt, err = db.PrepareContext(ctx, createAccount); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateAccount: %w", err)
 	}
+	if q.createAddressStmt, err = db.PrepareContext(ctx, createAddress); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateAddress: %w", err)
+	}
 	if q.createTradeStmt, err = db.PrepareContext(ctx, createTrade); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateTrade: %w", err)
 	}
@@ -52,6 +55,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateAccountStmt, err = db.PrepareContext(ctx, updateAccount); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateAccount: %w", err)
 	}
+	if q.updateAddressStmt, err = db.PrepareContext(ctx, updateAddress); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateAddress: %w", err)
+	}
 	if q.updateTradeStmt, err = db.PrepareContext(ctx, updateTrade); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateTrade: %w", err)
 	}
@@ -63,6 +69,11 @@ func (q *Queries) Close() error {
 	if q.createAccountStmt != nil {
 		if cerr := q.createAccountStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createAccountStmt: %w", cerr)
+		}
+	}
+	if q.createAddressStmt != nil {
+		if cerr := q.createAddressStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createAddressStmt: %w", cerr)
 		}
 	}
 	if q.createTradeStmt != nil {
@@ -110,6 +121,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing updateAccountStmt: %w", cerr)
 		}
 	}
+	if q.updateAddressStmt != nil {
+		if cerr := q.updateAddressStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateAddressStmt: %w", cerr)
+		}
+	}
 	if q.updateTradeStmt != nil {
 		if cerr := q.updateTradeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateTradeStmt: %w", cerr)
@@ -155,6 +171,7 @@ type Queries struct {
 	db                           DBTX
 	tx                           *sql.Tx
 	createAccountStmt            *sql.Stmt
+	createAddressStmt            *sql.Stmt
 	createTradeStmt              *sql.Stmt
 	deleteAddressFromAccountStmt *sql.Stmt
 	getAccountByIdStmt           *sql.Stmt
@@ -164,6 +181,7 @@ type Queries struct {
 	listAccountsStmt             *sql.Stmt
 	listTradesByAccountStmt      *sql.Stmt
 	updateAccountStmt            *sql.Stmt
+	updateAddressStmt            *sql.Stmt
 	updateTradeStmt              *sql.Stmt
 }
 
@@ -172,6 +190,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:                           tx,
 		tx:                           tx,
 		createAccountStmt:            q.createAccountStmt,
+		createAddressStmt:            q.createAddressStmt,
 		createTradeStmt:              q.createTradeStmt,
 		deleteAddressFromAccountStmt: q.deleteAddressFromAccountStmt,
 		getAccountByIdStmt:           q.getAccountByIdStmt,
@@ -181,6 +200,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listAccountsStmt:             q.listAccountsStmt,
 		listTradesByAccountStmt:      q.listTradesByAccountStmt,
 		updateAccountStmt:            q.updateAccountStmt,
+		updateAddressStmt:            q.updateAddressStmt,
 		updateTradeStmt:              q.updateTradeStmt,
 	}
 }

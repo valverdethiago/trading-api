@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS address
   street TEXT NOT NULL,
   city TEXT NOT NULL,
   state state NOT NULL,
-  zipcode NUMERIC(9) NOT NULL,
+  zipcode TEXT NOT NULL,
   account_uuid UUID, 
   created_date TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
   updated_date TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),

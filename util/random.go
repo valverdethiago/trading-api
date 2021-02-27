@@ -6,8 +6,12 @@ import (
 	"time"
 )
 
-const alphabet = "abcdefghijklmnopqrstuvwxyz "
-const mailSuffix = "@gmail.com"
+const (
+	alphabet   = "abcdefghijklmnopqrstuvwxyz "
+	digits     = "1234567890"
+	characters = alphabet + digits
+	mailSuffix = "@gmail.com"
+)
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -20,11 +24,26 @@ func RandomInt(min, max int64) int64 {
 
 // RandomString generates a random string of length n
 func RandomString(n int) string {
+	return RandomFromSource(n, alphabet)
+}
+
+// RandomNumericString generates a random string of length n
+func RandomNumericString(n int) string {
+	return RandomFromSource(n, digits)
+}
+
+// RandomAlphaNumericString generates a random string of length n
+func RandomAlphaNumericString(n int) string {
+	return RandomFromSource(n, characters)
+}
+
+// RandomFromSource generates a random string with the characters on source
+func RandomFromSource(n int, source string) string {
 	var sb strings.Builder
-	k := len(alphabet)
+	k := len(source)
 
 	for i := 0; i < n; i++ {
-		c := alphabet[rand.Intn(k)]
+		c := source[rand.Intn(k)]
 		sb.WriteByte(c)
 	}
 	return sb.String()
@@ -38,5 +57,9 @@ func RandomUsername() string {
 // RandomEmail generates a random email
 func RandomEmail() string {
 	return RandomUsername() + mailSuffix
+}
 
+// RandomZipcode generates a random zipcode
+func RandomZipcode() string {
+	return RandomNumericString(5)
 }

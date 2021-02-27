@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
+	CreateAddress(ctx context.Context, arg CreateAddressParams) (Address, error)
 	CreateTrade(ctx context.Context, arg CreateTradeParams) (Trade, error)
 	DeleteAddressFromAccount(ctx context.Context, accountUuid uuid.UUID) error
 	GetAccountById(ctx context.Context, accountUuid uuid.UUID) (Account, error)
@@ -19,6 +20,7 @@ type Querier interface {
 	ListAccounts(ctx context.Context) ([]Account, error)
 	ListTradesByAccount(ctx context.Context, accountUuid uuid.UUID) ([]Trade, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
+	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error)
 	UpdateTrade(ctx context.Context, arg UpdateTradeParams) error
 }
 
