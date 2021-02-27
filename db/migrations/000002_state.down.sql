@@ -1,0 +1,1 @@
+DROP TYPE state IF EXISTS
