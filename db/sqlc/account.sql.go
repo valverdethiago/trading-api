@@ -93,10 +93,11 @@ func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
 	return items, nil
 }
 
-const updateAccount = `-- name: UpdateAccount :exec
+const updateAccount = `-- name: UpdateAccount :one
 UPDATE account 
    SET username = $1, 
-       email = $2 
+       email = $2,
+       updated_date = now()
  WHERE account_uuid = $3
  RETURNING account_uuid, username, email, created_date, updated_date, created_by, updated_by
 `
@@ -107,7 +108,17 @@ type UpdateAccountParams struct {
 	AccountUuid uuid.UUID `json:"account_uuid"`
 }
 
-func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) error {
-	_, err := q.exec(ctx, q.updateAccountStmt, updateAccount, arg.Username, arg.Email, arg.AccountUuid)
-	return err
+func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
+	row := q.queryRow(ctx, q.updateAccountStmt, updateAccount, arg.Username, arg.Email, arg.AccountUuid)
+	var i Account
+	err := row.Scan(
+		&i.AccountUuid,
+		&i.Username,
+		&i.Email,
+		&i.CreatedDate,
+		&i.UpdatedDate,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+	)
+	return i, err
 }

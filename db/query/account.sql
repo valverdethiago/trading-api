@@ -13,9 +13,10 @@ INSERT INTO account (username, email)
 VALUES ($1, $2)
 RETURNING *; 
 
--- name: UpdateAccount :exec
+-- name: UpdateAccount :one
 UPDATE account 
    SET username = $1, 
-       email = $2 
+       email = $2,
+       updated_date = now()
  WHERE account_uuid = $3
  RETURNING *;

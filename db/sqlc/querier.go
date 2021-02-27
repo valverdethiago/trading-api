@@ -18,7 +18,7 @@ type Querier interface {
 	GetTradeById(ctx context.Context, tradeUuid uuid.UUID) (Trade, error)
 	ListAccounts(ctx context.Context) ([]Account, error)
 	ListTradesByAccount(ctx context.Context, accountUuid uuid.UUID) ([]Trade, error)
-	UpdateAccount(ctx context.Context, arg UpdateAccountParams) error
+	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
 	UpdateTrade(ctx context.Context, arg UpdateTradeParams) error
 }
 
