@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  stock_db:
+    restart: unless-stopped
+    image: postgres:10-alpine
+    ports:
+      - '6432:5432'
+    container_name: stock_db
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_DB: 'stock_database'
+      POSTGRES_PASSWORD: 'g0l@ng'
