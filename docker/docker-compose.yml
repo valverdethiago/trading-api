@@ -9,5 +9,5 @@ services:
     container_name: stock_db
     environment:
       POSTGRES_USER: 'postgres'
-      POSTGRES_DB: 'stock_database'
-      POSTGRES_PASSWORD: 'g0l@ng'
+      POSTGRES_DB: 'trade'
+      POSTGRES_PASSWORD: 'golang'
