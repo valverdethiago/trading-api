@@ -19,7 +19,7 @@ type CreateAddressParams struct {
 	Name        string    `json:"name"`
 	Street      string    `json:"street"`
 	City        string    `json:"city"`
-	State       State     `json:"state"`
+	State       State     `json:"column_4"`
 	Zipcode     string    `json:"zipcode"`
 	AccountUuid uuid.UUID `json:"account_uuid"`
 }

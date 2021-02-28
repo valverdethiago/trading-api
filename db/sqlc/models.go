@@ -144,9 +144,9 @@ type Trade struct {
 	TradeUuid   uuid.UUID      `json:"trade_uuid"`
 	AccountUuid uuid.UUID      `json:"account_uuid"`
 	Symbol      string         `json:"symbol"`
-	Quantity    string         `json:"quantity"`
+	Quantity    int64          `json:"quantity"`
 	Side        TradeSide      `json:"side"`
-	Price       string         `json:"price"`
+	Price       float64        `json:"price"`
 	Status      TradeStatus    `json:"status"`
 	CreatedDate sql.NullTime   `json:"created_date"`
 	UpdatedDate sql.NullTime   `json:"updated_date"`

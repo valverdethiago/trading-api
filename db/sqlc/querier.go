@@ -21,7 +21,7 @@ type Querier interface {
 	ListTradesByAccount(ctx context.Context, accountUuid uuid.UUID) ([]Trade, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
 	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error)
-	UpdateTrade(ctx context.Context, arg UpdateTradeParams) error
+	UpdateTrade(ctx context.Context, arg UpdateTradeParams) (Trade, error)
 }
 
 var _ Querier = (*Queries)(nil)

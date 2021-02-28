@@ -18,9 +18,9 @@ RETURNING trade_uuid, account_uuid, symbol, quantity, side, price, status, creat
 type CreateTradeParams struct {
 	AccountUuid uuid.UUID `json:"account_uuid"`
 	Symbol      string    `json:"symbol"`
-	Quantity    string    `json:"quantity"`
-	Column4     TradeSide `json:"column_4"`
-	Price       string    `json:"price"`
+	Quantity    int64     `json:"quantity"`
+	Side        TradeSide `json:"state"`
+	Price       float64   `json:"price"`
 }
 
 func (q *Queries) CreateTrade(ctx context.Context, arg CreateTradeParams) (Trade, error) {
@@ -28,7 +28,7 @@ func (q *Queries) CreateTrade(ctx context.Context, arg CreateTradeParams) (Trade
 		arg.AccountUuid,
 		arg.Symbol,
 		arg.Quantity,
-		arg.Column4,
+		arg.Side,
 		arg.Price,
 	)
 	var i Trade
@@ -115,34 +115,49 @@ func (q *Queries) ListTradesByAccount(ctx context.Context, accountUuid uuid.UUID
 	return items, nil
 }
 
-const updateTrade = `-- name: UpdateTrade :exec
+const updateTrade = `-- name: UpdateTrade :one
 UPDATE trade 
    SET symbol = $1, 
        quantity = $2,
        side = $3::trade_side,
        price = $4, 
-       status = $5::trade_status
+       status = $5::trade_status,
+       updated_date = now()
  WHERE trade_uuid = $6
  RETURNING trade_uuid, account_uuid, symbol, quantity, side, price, status, created_date, updated_date, created_by, updated_by
 `
 
 type UpdateTradeParams struct {
 	Symbol    string      `json:"symbol"`
-	Quantity  string      `json:"quantity"`
-	Column3   TradeSide   `json:"column_3"`
-	Price     string      `json:"price"`
-	Column5   TradeStatus `json:"column_5"`
+	Quantity  int64       `json:"quantity"`
+	Side      TradeSide   `json:"side"`
+	Price     float64     `json:"price"`
+	Status    TradeStatus `json:"status"`
 	TradeUuid uuid.UUID   `json:"trade_uuid"`
 }
 
-func (q *Queries) UpdateTrade(ctx context.Context, arg UpdateTradeParams) error {
-	_, err := q.exec(ctx, q.updateTradeStmt, updateTrade,
+func (q *Queries) UpdateTrade(ctx context.Context, arg UpdateTradeParams) (Trade, error) {
+	row := q.queryRow(ctx, q.updateTradeStmt, updateTrade,
 		arg.Symbol,
 		arg.Quantity,
-		arg.Column3,
+		arg.Side,
 		arg.Price,
-		arg.Column5,
+		arg.Status,
 		arg.TradeUuid,
 	)
-	return err
+	var i Trade
+	err := row.Scan(
+		&i.TradeUuid,
+		&i.AccountUuid,
+		&i.Symbol,
+		&i.Quantity,
+		&i.Side,
+		&i.Price,
+		&i.Status,
+		&i.CreatedDate,
+		&i.UpdatedDate,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+	)
+	return i, err
 }
