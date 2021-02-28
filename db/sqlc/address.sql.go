@@ -19,13 +19,13 @@ type CreateAddressParams struct {
 	Name        string    `json:"name"`
 	Street      string    `json:"street"`
 	City        string    `json:"city"`
-	State       State     `json:"column_4"`
+	State       State     `json:"state"`
 	Zipcode     string    `json:"zipcode"`
 	AccountUuid uuid.UUID `json:"account_uuid"`
 }
 
 func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (Address, error) {
-	row := q.queryRow(ctx, q.createAddressStmt, createAddress,
+	row := q.db.QueryRowContext(ctx, createAddress,
 		arg.Name,
 		arg.Street,
 		arg.City,
@@ -56,7 +56,7 @@ DELETE FROM address
 `
 
 func (q *Queries) DeleteAddressFromAccount(ctx context.Context, accountUuid uuid.UUID) error {
-	_, err := q.exec(ctx, q.deleteAddressFromAccountStmt, deleteAddressFromAccount, accountUuid)
+	_, err := q.db.ExecContext(ctx, deleteAddressFromAccount, accountUuid)
 	return err
 }
 
@@ -67,7 +67,7 @@ SELECT address_uuid, name, street, city, state, zipcode, account_uuid, created_d
 `
 
 func (q *Queries) GetAddressByAccount(ctx context.Context, accountUuid uuid.UUID) (Address, error) {
-	row := q.queryRow(ctx, q.getAddressByAccountStmt, getAddressByAccount, accountUuid)
+	row := q.db.QueryRowContext(ctx, getAddressByAccount, accountUuid)
 	var i Address
 	err := row.Scan(
 		&i.AddressUuid,
@@ -92,7 +92,7 @@ SELECT address_uuid, name, street, city, state, zipcode, account_uuid, created_d
 `
 
 func (q *Queries) GetAddressById(ctx context.Context, addressUuid uuid.UUID) (Address, error) {
-	row := q.queryRow(ctx, q.getAddressByIdStmt, getAddressById, addressUuid)
+	row := q.db.QueryRowContext(ctx, getAddressById, addressUuid)
 	var i Address
 	err := row.Scan(
 		&i.AddressUuid,
@@ -126,13 +126,13 @@ type UpdateAddressParams struct {
 	Name        string    `json:"name"`
 	Street      string    `json:"street"`
 	City        string    `json:"city"`
-	State       State     `json:"column_4"`
+	State       State     `json:"state"`
 	Zipcode     string    `json:"zipcode"`
 	AddressUuid uuid.UUID `json:"address_uuid"`
 }
 
 func (q *Queries) UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error) {
-	row := q.queryRow(ctx, q.updateAddressStmt, updateAddress,
+	row := q.db.QueryRowContext(ctx, updateAddress,
 		arg.Name,
 		arg.Street,
 		arg.City,

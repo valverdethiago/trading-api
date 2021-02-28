@@ -21,7 +21,7 @@ type CreateAccountParams struct {
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
-	row := q.queryRow(ctx, q.createAccountStmt, createAccount, arg.Username, arg.Email)
+	row := q.db.QueryRowContext(ctx, createAccount, arg.Username, arg.Email)
 	var i Account
 	err := row.Scan(
 		&i.AccountUuid,
@@ -42,7 +42,7 @@ SELECT account_uuid, username, email, created_date, updated_date, created_by, up
 `
 
 func (q *Queries) GetAccountById(ctx context.Context, accountUuid uuid.UUID) (Account, error) {
-	row := q.queryRow(ctx, q.getAccountByIdStmt, getAccountById, accountUuid)
+	row := q.db.QueryRowContext(ctx, getAccountById, accountUuid)
 	var i Account
 	err := row.Scan(
 		&i.AccountUuid,
@@ -63,7 +63,7 @@ ORDER BY created_date
 `
 
 func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
-	rows, err := q.query(ctx, q.listAccountsStmt, listAccounts)
+	rows, err := q.db.QueryContext(ctx, listAccounts)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ type UpdateAccountParams struct {
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
-	row := q.queryRow(ctx, q.updateAccountStmt, updateAccount, arg.Username, arg.Email, arg.AccountUuid)
+	row := q.db.QueryRowContext(ctx, updateAccount, arg.Username, arg.Email, arg.AccountUuid)
 	var i Account
 	err := row.Scan(
 		&i.AccountUuid,
