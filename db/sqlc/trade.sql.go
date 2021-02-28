@@ -19,12 +19,12 @@ type CreateTradeParams struct {
 	AccountUuid uuid.UUID `json:"account_uuid"`
 	Symbol      string    `json:"symbol"`
 	Quantity    int64     `json:"quantity"`
-	Side        TradeSide `json:"state"`
+	Side        TradeSide `json:"side"`
 	Price       float64   `json:"price"`
 }
 
 func (q *Queries) CreateTrade(ctx context.Context, arg CreateTradeParams) (Trade, error) {
-	row := q.queryRow(ctx, q.createTradeStmt, createTrade,
+	row := q.db.QueryRowContext(ctx, createTrade,
 		arg.AccountUuid,
 		arg.Symbol,
 		arg.Quantity,
@@ -55,7 +55,7 @@ SELECT trade_uuid, account_uuid, symbol, quantity, side, price, status, created_
 `
 
 func (q *Queries) GetTradeById(ctx context.Context, tradeUuid uuid.UUID) (Trade, error) {
-	row := q.queryRow(ctx, q.getTradeByIdStmt, getTradeById, tradeUuid)
+	row := q.db.QueryRowContext(ctx, getTradeById, tradeUuid)
 	var i Trade
 	err := row.Scan(
 		&i.TradeUuid,
@@ -81,7 +81,7 @@ ORDER BY created_date
 `
 
 func (q *Queries) ListTradesByAccount(ctx context.Context, accountUuid uuid.UUID) ([]Trade, error) {
-	rows, err := q.query(ctx, q.listTradesByAccountStmt, listTradesByAccount, accountUuid)
+	rows, err := q.db.QueryContext(ctx, listTradesByAccount, accountUuid)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ type UpdateTradeParams struct {
 }
 
 func (q *Queries) UpdateTrade(ctx context.Context, arg UpdateTradeParams) (Trade, error) {
-	row := q.queryRow(ctx, q.updateTradeStmt, updateTrade,
+	row := q.db.QueryRowContext(ctx, updateTrade,
 		arg.Symbol,
 		arg.Quantity,
 		arg.Side,
