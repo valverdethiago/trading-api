@@ -56,6 +56,27 @@ func (q *Queries) GetAccountById(ctx context.Context, accountUuid uuid.UUID) (Ac
 	return i, err
 }
 
+const getAccountByUsername = `-- name: GetAccountByUsername :one
+SELECT account_uuid, username, email, created_date, updated_date, created_by, updated_by 
+  FROM account
+ WHERE username = $1
+`
+
+func (q *Queries) GetAccountByUsername(ctx context.Context, username string) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccountByUsername, username)
+	var i Account
+	err := row.Scan(
+		&i.AccountUuid,
+		&i.Username,
+		&i.Email,
+		&i.CreatedDate,
+		&i.UpdatedDate,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+	)
+	return i, err
+}
+
 const listAccounts = `-- name: ListAccounts :many
   SELECT account_uuid, username, email, created_date, updated_date, created_by, updated_by 
     FROM account

@@ -1,24 +1,25 @@
 package api
 
 import (
-	"context"
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/valverdethiago/trading-api/db/sqlc"
+	"github.com/valverdethiago/trading-api/service"
 )
 
-const accountsPath = "/accounts"
+const (
+	accountsPath     = "/accounts"
+	accountsPathByID = "/accounts/:id"
+)
 
 type createAccountRequest struct {
-	Username string   `json:"username" binding:"required"`
-	Email    string   `json:"email" binding:"required"`
-	Address  *address `json:"address" binding:"omitempty"`
+	Username string          `json:"username" binding:"required"`
+	Email    string          `json:"email" binding:"required"`
+	Address  *addressRequest `json:"address" binding:"omitempty"`
 }
 
-type address struct {
+type addressRequest struct {
 	Name    string `json:"name" binding:"required"`
 	Street  string `json:"street" binding:"required"`
 	City    string `json:"city" binding:"required"`
@@ -28,13 +29,13 @@ type address struct {
 
 // AccountController controller for accounts object
 type AccountController struct {
-	queries *db.Queries
+	service *service.AccountService
 }
 
 // NewAccountController builds a new instance of account controller
 func NewAccountController(queries *db.Queries) *AccountController {
 	return &AccountController{
-		queries: queries,
+		service: service.NewAccountService(queries),
 	}
 
 }
@@ -42,6 +43,7 @@ func NewAccountController(queries *db.Queries) *AccountController {
 func (controller *AccountController) setupRoutes(router *gin.Engine) {
 	router.POST(accountsPath, controller.createAccount)
 	router.GET(accountsPath, controller.listAccounts)
+	router.GET(accountsPathByID, controller.findAccountByID)
 }
 
 func (controller *AccountController) createAccount(ctx *gin.Context) {
@@ -50,14 +52,31 @@ func (controller *AccountController) createAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	message := fmt.Sprintf("Received name %s", req.Username)
-	log.Printf(message)
-	ctx.JSON(http.StatusAccepted, gin.H{"message": message})
+	var account = db.Account{
+		Username: req.Username,
+		Email:    req.Email,
+	}
+	var address *db.Address
+	if req.Address != nil {
+		address = &db.Address{
+			Name:    req.Address.Name,
+			Street:  req.Address.Street,
+			City:    req.Address.City,
+			State:   db.State(req.Address.State),
+			Zipcode: req.Address.Zipcode,
+		}
+	}
+	dbAccount, _, err := controller.service.CreateAccount(account, address)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Unexpected exception happened" + err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusCreated, dbAccount)
 	return
 }
 
 func (controller *AccountController) listAccounts(ctx *gin.Context) {
-	accounts, err := controller.queries.ListAccounts(context.Background())
+	accounts, err := controller.service.ListAccounts()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -67,4 +86,23 @@ func (controller *AccountController) listAccounts(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, accounts)
+}
+
+type getAccountRequest struct {
+	ID string `uri:"id" binding:"required"`
+}
+
+func (controller *AccountController) findAccountByID(ctx *gin.Context) {
+	var req getAccountRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	account, err := controller.service.GetAccountByID(req.ID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "No account found for this id"})
+		return
+	}
+	ctx.JSON(http.StatusOK, account)
+
 }
