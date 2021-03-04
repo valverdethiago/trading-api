@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 
@@ -26,15 +27,14 @@ func (service *AccountService) CreateAccount(account db.Account, address *db.Add
 	var dbAccount db.Account
 	var dbAddress db.Address
 
-	_, err := service.queries.GetAccountByUsername(context.Background(), account.Username)
-	if err == nil {
+	if service.isUsernameAlreadyTaken(account.Username) {
 		return dbAccount, dbAddress, errors.New("Username already taken")
 	}
 	arg := db.CreateAccountParams{
 		Username: account.Username,
 		Email:    account.Email,
 	}
-	dbAccount, err = service.queries.CreateAccount(context.Background(), arg)
+	dbAccount, err := service.queries.CreateAccount(context.Background(), arg)
 	if err != nil {
 		return dbAccount, dbAddress, err
 	}
@@ -59,6 +59,11 @@ func (service *AccountService) GetAccountByID(id string) (db.Account, error) {
 	}
 	log.Printf("trying to fetch account with id %s", uuid)
 	return service.queries.GetAccountById(context.Background(), uuid)
+}
+
+func (service *AccountService) isUsernameAlreadyTaken(Username string) bool {
+	_, err := service.queries.GetAccountByUsername(context.Background(), Username)
+	return err == nil || err != sql.ErrNoRows
 }
 
 func (service *AccountService) createAddressForAccount(account db.Account, address *db.Address) (db.Address, error) {

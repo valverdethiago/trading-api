@@ -68,7 +68,7 @@ func (controller *AccountController) createAccount(ctx *gin.Context) {
 	}
 	dbAccount, _, err := controller.service.CreateAccount(account, address)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Unexpected exception happened" + err.Error()})
+		ctx.JSON(http.StatusConflict, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusCreated, dbAccount)

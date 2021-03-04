@@ -19,6 +19,8 @@ func NewServer(queries *db.Queries) *Server {
 	}
 	accountController := NewAccountController(server.queries)
 	accountController.setupRoutes(server.router)
+	addressController := NewAddressController(server.queries)
+	addressController.setupRoutes(server.router)
 	return server
 }
 
