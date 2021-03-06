@@ -21,6 +21,8 @@ func NewServer(queries *db.Queries) *Server {
 	accountController.setupRoutes(server.router)
 	addressController := NewAddressController(server.queries)
 	addressController.setupRoutes(server.router)
+	tradeController := NewTradeController(server.queries)
+	tradeController.setupRoutes(server.router)
 	return server
 }
 

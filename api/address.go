@@ -21,10 +21,6 @@ type persistAddressRequest struct {
 	Zipcode string `json:"zipcode" binding:"required"`
 }
 
-type accountIDRequest struct {
-	ID string `uri:"id" binding:"required"`
-}
-
 // AddressController controller for address object
 type AddressController struct {
 	service *service.AddressService
