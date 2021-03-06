@@ -1,3 +1,8 @@
+-- name: GetAccountByUsername :one
+SELECT * 
+  FROM account
+ WHERE username = $1;
+
 -- name: GetAccountById :one
 SELECT * 
   FROM account

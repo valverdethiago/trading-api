@@ -161,3 +161,35 @@ func (q *Queries) UpdateTrade(ctx context.Context, arg UpdateTradeParams) (Trade
 	)
 	return i, err
 }
+
+const updateTradeStatus = `-- name: UpdateTradeStatus :one
+UPDATE trade 
+   SET status = $1::trade_status,
+       updated_date = now()
+ WHERE trade_uuid = $2
+ RETURNING trade_uuid, account_uuid, symbol, quantity, side, price, status, created_date, updated_date, created_by, updated_by
+`
+
+type UpdateTradeStatusParams struct {
+	Status    TradeStatus `json:"status"`
+	TradeUuid uuid.UUID   `json:"trade_uuid"`
+}
+
+func (q *Queries) UpdateTradeStatus(ctx context.Context, arg UpdateTradeStatusParams) (Trade, error) {
+	row := q.db.QueryRowContext(ctx, updateTradeStatus, arg.Status, arg.TradeUuid)
+	var i Trade
+	err := row.Scan(
+		&i.TradeUuid,
+		&i.AccountUuid,
+		&i.Symbol,
+		&i.Quantity,
+		&i.Side,
+		&i.Price,
+		&i.Status,
+		&i.CreatedDate,
+		&i.UpdatedDate,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+	)
+	return i, err
+}

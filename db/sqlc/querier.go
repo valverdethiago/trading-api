@@ -14,6 +14,7 @@ type Querier interface {
 	CreateTrade(ctx context.Context, arg CreateTradeParams) (Trade, error)
 	DeleteAddressFromAccount(ctx context.Context, accountUuid uuid.UUID) error
 	GetAccountById(ctx context.Context, accountUuid uuid.UUID) (Account, error)
+	GetAccountByUsername(ctx context.Context, username string) (Account, error)
 	GetAddressByAccount(ctx context.Context, accountUuid uuid.UUID) (Address, error)
 	GetAddressById(ctx context.Context, addressUuid uuid.UUID) (Address, error)
 	GetTradeById(ctx context.Context, tradeUuid uuid.UUID) (Trade, error)
@@ -22,6 +23,7 @@ type Querier interface {
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
 	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error)
 	UpdateTrade(ctx context.Context, arg UpdateTradeParams) (Trade, error)
+	UpdateTradeStatus(ctx context.Context, arg UpdateTradeStatusParams) (Trade, error)
 }
 
 var _ Querier = (*Queries)(nil)

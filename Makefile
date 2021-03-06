@@ -22,4 +22,7 @@ sqlc:
 test:
 	go test -v -cover ./...
 
-.PHONY: migrate-up migtrate-down postgresql-start postgresql-stop sqlc test
+server:
+	go run main.go
+
+.PHONY: migrate-up migtrate-down postgresql-start postgresql-stop sqlc test server

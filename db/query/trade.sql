@@ -24,3 +24,10 @@ UPDATE trade
        updated_date = now()
  WHERE trade_uuid = $6
  RETURNING *;
+
+-- name: UpdateTradeStatus :one
+UPDATE trade 
+   SET status = $1::trade_status,
+       updated_date = now()
+ WHERE trade_uuid = $2
+ RETURNING *;

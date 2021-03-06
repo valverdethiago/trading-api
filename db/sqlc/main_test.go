@@ -7,17 +7,17 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
-)
-
-const (
-	dbDriver = "postgres"
-	dbSource = "postgresql://postgres:golang@localhost:6432/trade_test?sslmode=disable"
+	"github.com/valverdethiago/trading-api/util"
 )
 
 var testQueries *Queries
 
 func TestMain(m *testing.M) {
-	conn, err := sql.Open(dbDriver, dbSource)
+	config, err := util.LoadConfig("../..", "test")
+	if err != nil {
+		log.Fatal("Could not load application config", err)
+	}
+	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal("Cannot connect to the test database", err)
 	}
