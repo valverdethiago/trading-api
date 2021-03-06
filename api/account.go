@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -102,9 +103,18 @@ func (controller *AccountController) findAccountByID(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	account, err := controller.service.GetAccountByID(req.ID)
+	uuid, err := parseUUID(req.ID)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": "No account found for this id"})
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	account, err := controller.service.GetAccountByID(uuid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, gin.H{"message": "No account found for this id"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
 		return
 	}
 	ctx.JSON(http.StatusOK, account)

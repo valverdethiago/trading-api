@@ -48,6 +48,11 @@ func (controller *AddressController) createAddressForAccount(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
+	uuid, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 	req, err := getAddressRequest(ctx)
 	if err != nil {
 		return
@@ -59,7 +64,7 @@ func (controller *AddressController) createAddressForAccount(ctx *gin.Context) {
 		State:   db.State(req.State),
 		Zipcode: req.Zipcode,
 	}
-	dbAddress, err := controller.service.CreateAddressForAccount(idReq.ID, address)
+	dbAddress, err := controller.service.CreateAddressForAccount(uuid, address)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -73,6 +78,11 @@ func (controller *AddressController) updateAddressForAccount(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
+	uuid, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 	req, err := getAddressRequest(ctx)
 	if err != nil {
 		return
@@ -84,7 +94,7 @@ func (controller *AddressController) updateAddressForAccount(ctx *gin.Context) {
 		State:   db.State(req.State),
 		Zipcode: req.Zipcode,
 	}
-	dbAddress, err := controller.service.UpdateAddressForAccount(idReq.ID, address)
+	dbAddress, err := controller.service.UpdateAddressForAccount(uuid, address)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -98,7 +108,12 @@ func (controller *AddressController) getAddressByAccountID(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	dbAddress, err := controller.service.GetAddressByAccountID(idReq.ID)
+	uuid, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	dbAddress, err := controller.service.GetAddressByAccountID(uuid)
 	if err != nil && err == sql.ErrNoRows {
 		ctx.JSON(http.StatusNoContent, gin.H{"message": "The account doesn't have an address yet."})
 		return

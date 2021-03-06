@@ -50,15 +50,8 @@ func (service *AccountService) ListAccounts() ([]db.Account, error) {
 }
 
 // GetAccountByID find account by id
-func (service *AccountService) GetAccountByID(id string) (db.Account, error) {
-	var dbAccount db.Account
-	log.Printf("Trying to parse id %s", id)
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return dbAccount, errors.New("Invalid ID")
-	}
-	log.Printf("trying to fetch account with id %s", uuid)
-	return service.queries.GetAccountById(context.Background(), uuid)
+func (service *AccountService) GetAccountByID(id uuid.UUID) (db.Account, error) {
+	return service.queries.GetAccountById(context.Background(), id)
 }
 
 func (service *AccountService) isUsernameAlreadyTaken(Username string) bool {
@@ -67,20 +60,16 @@ func (service *AccountService) isUsernameAlreadyTaken(Username string) bool {
 }
 
 // AssertAccountExists Returns the account with the given ID
-func (service *AccountService) AssertAccountExists(ID string) (db.Account, error) {
+func (service *AccountService) AssertAccountExists(ID uuid.UUID) (db.Account, error) {
 	var dbAccount db.Account
-	uuid, err := parseUUID(ID)
-	if err != nil {
-		return dbAccount, err
-	}
-	dbAccount, err = service.queries.GetAccountById(context.Background(), uuid)
+	dbAccount, err := service.queries.GetAccountById(context.Background(), ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return dbAccount, errors.New("No account found for the given id")
 		}
 		return dbAccount, err
 	}
-	log.Printf("Found account with id %s", uuid)
+	log.Printf("Found account with id %s", ID)
 	return dbAccount, nil
 }
 

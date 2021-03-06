@@ -10,7 +10,7 @@ import (
 	"github.com/valverdethiago/trading-api/util"
 )
 
-var testQueries *Queries
+var testQueries Querier
 
 func TestMain(m *testing.M) {
 	config, err := util.LoadConfig("../..", "test")

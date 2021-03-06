@@ -56,13 +56,18 @@ func (controller *TradeController) createTrade(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
+	accountUUID, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 	trade := db.Trade{
 		Symbol:   req.Symbol,
 		Side:     req.Side,
 		Price:    req.Price,
 		Quantity: req.Quantity,
 	}
-	dbTrade, err := controller.service.CreateTrade(trade, idReq.ID)
+	dbTrade, err := controller.service.CreateTrade(trade, accountUUID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -73,10 +78,15 @@ func (controller *TradeController) createTrade(ctx *gin.Context) {
 func (controller *TradeController) listTradesByAccount(ctx *gin.Context) {
 	idReq, err := getAccountIDRequest(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	dbTrades, err := controller.service.ListTradesByAccount(idReq.ID)
+	accountUUID, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, err)
+		return
+	}
+	dbTrades, err := controller.service.ListTradesByAccount(accountUUID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -95,7 +105,17 @@ func (controller *TradeController) getTradeByIDAndAccountID(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	dbTrade, err := controller.service.FindByIDAndAccountID(tradeIDReq.ID, accountIDReq.ID)
+	accountUUID, err := parseUUID(accountIDReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	tradeUUID, err := parseUUID(tradeIDReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	dbTrade, err := controller.service.FindByIDAndAccountID(tradeUUID, accountUUID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -114,7 +134,17 @@ func (controller *TradeController) cancelTradeByIDAndAccountID(ctx *gin.Context)
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	dbTrade, err := controller.service.CancelTradeByIDAndAccountID(tradeIDReq.ID, accountIDReq.ID)
+	accountUUID, err := parseUUID(accountIDReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	tradeUUID, err := parseUUID(tradeIDReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	dbTrade, err := controller.service.CancelTradeByIDAndAccountID(tradeUUID, accountUUID)
 	if err != nil {
 		ctx.JSON(http.StatusConflict, gin.H{"message": err.Error()})
 		return

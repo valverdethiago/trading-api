@@ -25,19 +25,13 @@ func NewAddressService(queries db.Querier, accountService *AccountService) *Addr
 }
 
 // GetAddressByAccountID find account by id
-func (service *AddressService) GetAddressByAccountID(ID string) (db.Address, error) {
-	var dbAddress db.Address
-	log.Printf("Trying to parse id %s", ID)
-	uuid, err := uuid.Parse(ID)
-	if err != nil {
-		return dbAddress, errors.New("Invalid ID")
-	}
-	log.Printf("trying to fetch address for account with id %s", uuid)
-	return service.queries.GetAddressByAccount(context.Background(), uuid)
+func (service *AddressService) GetAddressByAccountID(ID uuid.UUID) (db.Address, error) {
+	log.Printf("trying to fetch address for account with id %s", ID)
+	return service.queries.GetAddressByAccount(context.Background(), ID)
 }
 
 // CreateAddressForAccount creates an address for an account only if there's no address yet
-func (service *AddressService) CreateAddressForAccount(ID string, address db.Address) (db.Address, error) {
+func (service *AddressService) CreateAddressForAccount(ID uuid.UUID, address db.Address) (db.Address, error) {
 	var dbAddress db.Address
 	dbAccount, err := service.accountService.AssertAccountExists(ID)
 	if err != nil {
@@ -59,7 +53,7 @@ func (service *AddressService) CreateAddressForAccount(ID string, address db.Add
 }
 
 // UpdateAddressForAccount creates an address for an account only if there's no address yet
-func (service *AddressService) UpdateAddressForAccount(ID string, address db.Address) (db.Address, error) {
+func (service *AddressService) UpdateAddressForAccount(ID uuid.UUID, address db.Address) (db.Address, error) {
 	var dbAddress db.Address
 	_, err := service.accountService.AssertAccountExists(ID)
 	if err != nil {
@@ -82,7 +76,7 @@ func (service *AddressService) UpdateAddressForAccount(ID string, address db.Add
 }
 
 // getAddressByAccountID Returns the address attached to the account with the given ID
-func (service *AddressService) getAddressByAccountID(ID string) (db.Address, error) {
+func (service *AddressService) getAddressByAccountID(ID uuid.UUID) (db.Address, error) {
 	var dbAddress db.Address
 	dbAccount, err := service.accountService.AssertAccountExists(ID)
 	if err != nil {
@@ -91,17 +85,7 @@ func (service *AddressService) getAddressByAccountID(ID string) (db.Address, err
 	return service.queries.GetAddressByAccount(context.Background(), dbAccount.AccountUuid)
 }
 
-func parseUUID(ID string) (uuid.UUID, error) {
-	log.Printf("Trying to parse id %s", ID)
-	var result uuid.UUID
-	result, err := uuid.Parse(ID)
-	if err != nil {
-		return result, errors.New("Invalid ID")
-	}
-	return result, nil
-}
-
-func (service *AddressService) accountAlreadyHasAddress(ID string) bool {
+func (service *AddressService) accountAlreadyHasAddress(ID uuid.UUID) bool {
 	_, err := service.GetAddressByAccountID(ID)
 	return err == nil || err != sql.ErrNoRows
 }
