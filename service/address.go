@@ -12,13 +12,15 @@ import (
 
 // AddressService service to handle business rules for addresses
 type AddressService struct {
-	queries *db.Queries
+	queries        *db.Queries
+	accountService *AccountService
 }
 
 // NewAddressService Creates new service for address
-func NewAddressService(queries *db.Queries) *AddressService {
+func NewAddressService(queries *db.Queries, accountService *AccountService) *AddressService {
 	return &AddressService{
-		queries: queries,
+		queries:        queries,
+		accountService: accountService,
 	}
 }
 
@@ -37,7 +39,7 @@ func (service *AddressService) GetAddressByAccountID(ID string) (db.Address, err
 // CreateAddressForAccount creates an address for an account only if there's no address yet
 func (service *AddressService) CreateAddressForAccount(ID string, address db.Address) (db.Address, error) {
 	var dbAddress db.Address
-	dbAccount, err := service.assertAccountExists(ID)
+	dbAccount, err := service.accountService.AssertAccountExists(ID)
 	if err != nil {
 		return dbAddress, err
 	}
@@ -59,7 +61,7 @@ func (service *AddressService) CreateAddressForAccount(ID string, address db.Add
 // UpdateAddressForAccount creates an address for an account only if there's no address yet
 func (service *AddressService) UpdateAddressForAccount(ID string, address db.Address) (db.Address, error) {
 	var dbAddress db.Address
-	_, err := service.assertAccountExists(ID)
+	_, err := service.accountService.AssertAccountExists(ID)
 	if err != nil {
 		return dbAddress, err
 	}
@@ -82,7 +84,7 @@ func (service *AddressService) UpdateAddressForAccount(ID string, address db.Add
 // getAddressByAccountID Returns the address attached to the account with the given ID
 func (service *AddressService) getAddressByAccountID(ID string) (db.Address, error) {
 	var dbAddress db.Address
-	dbAccount, err := service.assertAccountExists(ID)
+	dbAccount, err := service.accountService.AssertAccountExists(ID)
 	if err != nil {
 		return dbAddress, err
 	}
@@ -97,23 +99,6 @@ func parseUUID(ID string) (uuid.UUID, error) {
 		return result, errors.New("Invalid ID")
 	}
 	return result, nil
-}
-
-func (service *AddressService) assertAccountExists(ID string) (db.Account, error) {
-	var dbAccount db.Account
-	uuid, err := parseUUID(ID)
-	if err != nil {
-		return dbAccount, err
-	}
-	dbAccount, err = service.queries.GetAccountById(context.Background(), uuid)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return dbAccount, errors.New("No account found for the given id")
-		}
-		return dbAccount, err
-	}
-	log.Printf("Found account with id %s", uuid)
-	return dbAccount, nil
 }
 
 func (service *AddressService) accountAlreadyHasAddress(ID string) bool {

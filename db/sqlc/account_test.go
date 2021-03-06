@@ -27,6 +27,16 @@ func createRandomAccount(t *testing.T) Account {
 	return account
 }
 
+func findAccountInList(accounts []Account, account Account) Account {
+	var result Account
+	for _, element := range accounts {
+		if element.AccountUuid == account.AccountUuid {
+			result = element
+		}
+	}
+	return result
+}
+
 func TestCreateAccount(t *testing.T) {
 	createRandomAccount(t)
 }
@@ -66,5 +76,8 @@ func TestListAccounts(t *testing.T) {
 	}
 	dbAccounts, err := testQueries.ListAccounts(context.Background())
 	require.NoError(t, err)
-	assert.LessOrEqual(t, len(accounts), len(dbAccounts))
+	for _, account := range accounts {
+		dbAccount := findAccountInList(dbAccounts, account)
+		assert.Equal(t, dbAccount, account)
+	}
 }

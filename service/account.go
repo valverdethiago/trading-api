@@ -66,6 +66,24 @@ func (service *AccountService) isUsernameAlreadyTaken(Username string) bool {
 	return err == nil || err != sql.ErrNoRows
 }
 
+// AssertAccountExists Returns the account with the given ID
+func (service *AccountService) AssertAccountExists(ID string) (db.Account, error) {
+	var dbAccount db.Account
+	uuid, err := parseUUID(ID)
+	if err != nil {
+		return dbAccount, err
+	}
+	dbAccount, err = service.queries.GetAccountById(context.Background(), uuid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return dbAccount, errors.New("No account found for the given id")
+		}
+		return dbAccount, err
+	}
+	log.Printf("Found account with id %s", uuid)
+	return dbAccount, nil
+}
+
 func (service *AccountService) createAddressForAccount(account db.Account, address *db.Address) (db.Address, error) {
 	var dbAddress db.Address
 	addressArg := db.CreateAddressParams{

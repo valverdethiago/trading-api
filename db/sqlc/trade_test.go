@@ -98,5 +98,25 @@ func TestUpdateTrade(t *testing.T) {
 	require.NotEqual(t, trade.Quantity, dbTrade.Quantity)
 	require.NotEqual(t, trade.Side, dbTrade.Side)
 	require.Equal(t, trade.TradeUuid, dbTrade.TradeUuid)
+}
+func TestUpdateTradeStatus(t *testing.T) {
+	account := createRandomAccount(t)
+	trade := createRandomTrade(t, account)
 
+	arg := UpdateTradeStatusParams{
+		Status:    TradeStatusCANCELLED,
+		TradeUuid: trade.TradeUuid,
+	}
+
+	dbTrade, err := testQueries.UpdateTradeStatus(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, dbTrade)
+	require.Equal(t, trade.AccountUuid, dbTrade.AccountUuid)
+	require.Equal(t, trade.CreatedDate, dbTrade.CreatedDate)
+	require.NotEqual(t, trade.UpdatedDate, dbTrade.UpdatedDate)
+	require.Equal(t, trade.Symbol, dbTrade.Symbol)
+	require.Equal(t, trade.Quantity, dbTrade.Quantity)
+	require.Equal(t, trade.Side, dbTrade.Side)
+	require.Equal(t, trade.TradeUuid, dbTrade.TradeUuid)
+	require.Equal(t, dbTrade.Status, TradeStatusCANCELLED)
 }
