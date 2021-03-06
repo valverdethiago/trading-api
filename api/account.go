@@ -37,7 +37,7 @@ type AccountController struct {
 }
 
 // NewAccountController builds a new instance of account controller
-func NewAccountController(queries *db.Queries) *AccountController {
+func NewAccountController(queries db.Querier) *AccountController {
 	return &AccountController{
 		service: service.NewAccountService(queries),
 	}

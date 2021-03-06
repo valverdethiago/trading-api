@@ -7,12 +7,12 @@ import (
 
 // Server serves HTTP requests for the stock trading REST API
 type Server struct {
-	queries *db.Queries
+	queries db.Querier
 	router  *gin.Engine
 }
 
 // NewServer queries a new HTTP Server for the REST API
-func NewServer(queries *db.Queries) *Server {
+func NewServer(queries db.Querier) *Server {
 	server := &Server{
 		queries: queries,
 		router:  gin.Default(),

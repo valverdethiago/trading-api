@@ -12,11 +12,11 @@ import (
 
 // AccountService service to handle business rules for accounts
 type AccountService struct {
-	queries *db.Queries
+	queries db.Querier
 }
 
 // NewAccountService Creates new service for account
-func NewAccountService(queries *db.Queries) *AccountService {
+func NewAccountService(queries db.Querier) *AccountService {
 	return &AccountService{
 		queries: queries,
 	}

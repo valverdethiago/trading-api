@@ -12,12 +12,12 @@ import (
 
 // AddressService service to handle business rules for addresses
 type AddressService struct {
-	queries        *db.Queries
+	queries        db.Querier
 	accountService *AccountService
 }
 
 // NewAddressService Creates new service for address
-func NewAddressService(queries *db.Queries, accountService *AccountService) *AddressService {
+func NewAddressService(queries db.Querier, accountService *AccountService) *AddressService {
 	return &AddressService{
 		queries:        queries,
 		accountService: accountService,

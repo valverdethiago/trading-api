@@ -31,7 +31,7 @@ type TradeController struct {
 }
 
 // NewTradeController builds a new intance of trade controller
-func NewTradeController(queries *db.Queries) *TradeController {
+func NewTradeController(queries db.Querier) *TradeController {
 	accountService := service.NewAccountService(queries)
 	return &TradeController{
 		service: service.NewTradeService(queries, accountService),

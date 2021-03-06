@@ -10,12 +10,12 @@ import (
 
 // TradeService service to handle business rules for trades
 type TradeService struct {
-	queries        *db.Queries
+	queries        db.Querier
 	accountService *AccountService
 }
 
 // NewTradeService creates a new TradeService instance
-func NewTradeService(queries *db.Queries, accountService *AccountService) *TradeService {
+func NewTradeService(queries db.Querier, accountService *AccountService) *TradeService {
 	return &TradeService{
 		queries: queries,
 	}

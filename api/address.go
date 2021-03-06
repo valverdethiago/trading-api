@@ -27,7 +27,7 @@ type AddressController struct {
 }
 
 // NewAddressController builds a new instance of account controller
-func NewAddressController(queries *db.Queries) *AddressController {
+func NewAddressController(queries db.Querier) *AddressController {
 	accountService := service.NewAccountService(queries)
 	return &AddressController{
 		service: service.NewAddressService(
