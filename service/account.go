@@ -8,17 +8,20 @@ import (
 
 	"github.com/google/uuid"
 	db "github.com/valverdethiago/trading-api/db/sqlc"
+	"github.com/valverdethiago/trading-api/db/store"
 )
 
 // AccountService service to handle business rules for accounts
 type AccountService struct {
-	queries *db.Queries
+	store        store.AccountStore
+	addressStore store.AddressStore
 }
 
 // NewAccountService Creates new service for account
-func NewAccountService(queries *db.Queries) *AccountService {
+func NewAccountService(store store.AccountStore, addressStore store.AddressStore) *AccountService {
 	return &AccountService{
-		queries: queries,
+		store:        store,
+		addressStore: addressStore,
 	}
 }
 
@@ -34,7 +37,7 @@ func (service *AccountService) CreateAccount(account db.Account, address *db.Add
 		Username: account.Username,
 		Email:    account.Email,
 	}
-	dbAccount, err := service.queries.CreateAccount(context.Background(), arg)
+	dbAccount, err := service.store.CreateAccount(context.Background(), arg)
 	if err != nil {
 		return dbAccount, dbAddress, err
 	}
@@ -46,7 +49,7 @@ func (service *AccountService) CreateAccount(account db.Account, address *db.Add
 
 // ListAccounts list all available accounts
 func (service *AccountService) ListAccounts() ([]db.Account, error) {
-	return service.queries.ListAccounts(context.Background())
+	return service.store.ListAccounts(context.Background())
 }
 
 // GetAccountByID find account by id
@@ -58,11 +61,11 @@ func (service *AccountService) GetAccountByID(id string) (db.Account, error) {
 		return dbAccount, errors.New("Invalid ID")
 	}
 	log.Printf("trying to fetch account with id %s", uuid)
-	return service.queries.GetAccountById(context.Background(), uuid)
+	return service.store.GetAccountByID(context.Background(), uuid)
 }
 
 func (service *AccountService) isUsernameAlreadyTaken(Username string) bool {
-	_, err := service.queries.GetAccountByUsername(context.Background(), Username)
+	_, err := service.store.GetAccountByUsername(context.Background(), Username)
 	return err == nil || err != sql.ErrNoRows
 }
 
@@ -73,7 +76,7 @@ func (service *AccountService) AssertAccountExists(ID string) (db.Account, error
 	if err != nil {
 		return dbAccount, err
 	}
-	dbAccount, err = service.queries.GetAccountById(context.Background(), uuid)
+	dbAccount, err = service.store.GetAccountByID(context.Background(), uuid)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return dbAccount, errors.New("No account found for the given id")
@@ -94,6 +97,6 @@ func (service *AccountService) createAddressForAccount(account db.Account, addre
 		Zipcode:     address.Zipcode,
 		AccountUuid: account.AccountUuid,
 	}
-	dbAddress, err := service.queries.CreateAddress(context.Background(), addressArg)
+	dbAddress, err := service.addressStore.CreateAddress(context.Background(), addressArg)
 	return dbAddress, err
 }

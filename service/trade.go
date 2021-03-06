@@ -6,18 +6,20 @@ import (
 	"log"
 
 	db "github.com/valverdethiago/trading-api/db/sqlc"
+	"github.com/valverdethiago/trading-api/db/store"
 )
 
 // TradeService service to handle business rules for trades
 type TradeService struct {
-	queries        *db.Queries
+	tradeStore     store.TradeStore
 	accountService *AccountService
 }
 
 // NewTradeService creates a new TradeService instance
-func NewTradeService(queries *db.Queries, accountService *AccountService) *TradeService {
+func NewTradeService(tradeStore store.TradeStore, accountService *AccountService) *TradeService {
 	return &TradeService{
-		queries: queries,
+		tradeStore:     tradeStore,
+		accountService: accountService,
 	}
 }
 
@@ -35,7 +37,7 @@ func (service *TradeService) CreateTrade(trade db.Trade, accountUUID string) (db
 		Side:        trade.Side,
 		Price:       trade.Price,
 	}
-	return service.queries.CreateTrade(context.Background(), arg)
+	return service.tradeStore.CreateTrade(context.Background(), arg)
 }
 
 //ListTradesByAccount list all trades for a given account
@@ -45,7 +47,7 @@ func (service *TradeService) ListTradesByAccount(accountUUID string) ([]db.Trade
 	if err != nil {
 		return dbTrades, err
 	}
-	return service.queries.ListTradesByAccount(context.Background(), dbAccount.AccountUuid)
+	return service.tradeStore.ListTradesByAccount(context.Background(), dbAccount.AccountUuid)
 }
 
 //FindByIDAndAccountID finds a trade by its ID and account ID
@@ -66,7 +68,7 @@ func (service *TradeService) CancelTradeByIDAndAccountID(ID string, accountUUID 
 		TradeUuid: dbTrade.TradeUuid,
 		Status:    db.TradeStatusCANCELLED,
 	}
-	return service.queries.UpdateTradeStatus(context.Background(), arg)
+	return service.tradeStore.UpdateTradeStatus(context.Background(), arg)
 
 }
 

@@ -8,18 +8,19 @@ import (
 
 	"github.com/google/uuid"
 	db "github.com/valverdethiago/trading-api/db/sqlc"
+	"github.com/valverdethiago/trading-api/db/store"
 )
 
 // AddressService service to handle business rules for addresses
 type AddressService struct {
-	queries        *db.Queries
+	addressStore   store.AddressStore
 	accountService *AccountService
 }
 
 // NewAddressService Creates new service for address
-func NewAddressService(queries *db.Queries, accountService *AccountService) *AddressService {
+func NewAddressService(addressStore store.AddressStore, accountService *AccountService) *AddressService {
 	return &AddressService{
-		queries:        queries,
+		addressStore:   addressStore,
 		accountService: accountService,
 	}
 }
@@ -33,7 +34,7 @@ func (service *AddressService) GetAddressByAccountID(ID string) (db.Address, err
 		return dbAddress, errors.New("Invalid ID")
 	}
 	log.Printf("trying to fetch address for account with id %s", uuid)
-	return service.queries.GetAddressByAccount(context.Background(), uuid)
+	return service.addressStore.GetAddressByAccount(context.Background(), uuid)
 }
 
 // CreateAddressForAccount creates an address for an account only if there's no address yet
@@ -55,7 +56,7 @@ func (service *AddressService) CreateAddressForAccount(ID string, address db.Add
 		Zipcode:     address.Zipcode,
 		AccountUuid: dbAccount.AccountUuid,
 	}
-	return service.queries.CreateAddress(context.Background(), arg)
+	return service.addressStore.CreateAddress(context.Background(), arg)
 }
 
 // UpdateAddressForAccount creates an address for an account only if there's no address yet
@@ -78,7 +79,7 @@ func (service *AddressService) UpdateAddressForAccount(ID string, address db.Add
 		Zipcode:     address.Zipcode,
 		AddressUuid: dbAddress.AddressUuid,
 	}
-	return service.queries.UpdateAddress(context.Background(), arg)
+	return service.addressStore.UpdateAddress(context.Background(), arg)
 }
 
 // getAddressByAccountID Returns the address attached to the account with the given ID
@@ -88,7 +89,7 @@ func (service *AddressService) getAddressByAccountID(ID string) (db.Address, err
 	if err != nil {
 		return dbAddress, err
 	}
-	return service.queries.GetAddressByAccount(context.Background(), dbAccount.AccountUuid)
+	return service.addressStore.GetAddressByAccount(context.Background(), dbAccount.AccountUuid)
 }
 
 func parseUUID(ID string) (uuid.UUID, error) {

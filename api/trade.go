@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	db "github.com/valverdethiago/trading-api/db/sqlc"
+	"github.com/valverdethiago/trading-api/db/store"
 	"github.com/valverdethiago/trading-api/service"
 )
 
@@ -31,10 +32,13 @@ type TradeController struct {
 }
 
 // NewTradeController builds a new intance of trade controller
-func NewTradeController(queries *db.Queries) *TradeController {
-	accountService := service.NewAccountService(queries)
+func NewTradeController(queries db.Querier) *TradeController {
+	accountStore := store.NewDbAccountStore(queries)
+	addressStore := store.NewDbAddressStore(queries)
+	tradeStore := store.NewDbTradeStore(queries)
+	accountService := service.NewAccountService(accountStore, addressStore)
 	return &TradeController{
-		service: service.NewTradeService(queries, accountService),
+		service: service.NewTradeService(tradeStore, accountService),
 	}
 }
 
