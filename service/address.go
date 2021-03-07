@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/google/uuid"
 	db "github.com/valverdethiago/trading-api/db/sqlc"
@@ -26,7 +25,6 @@ func NewAddressService(queries db.Querier, accountService *AccountService) *Addr
 
 // GetAddressByAccountID find account by id
 func (service *AddressService) GetAddressByAccountID(ID uuid.UUID) (db.Address, error) {
-	log.Printf("trying to fetch address for account with id %s", ID)
 	return service.queries.GetAddressByAccount(context.Background(), ID)
 }
 
@@ -61,7 +59,7 @@ func (service *AddressService) UpdateAddressForAccount(ID uuid.UUID, address db.
 	}
 	dbAddress, err = service.GetAddressByAccountID(ID)
 	if err != nil && err == sql.ErrNoRows {
-		return dbAddress, errors.New("Account doesn't have an address yet")
+		return dbAddress, err
 	}
 
 	arg := db.UpdateAddressParams{

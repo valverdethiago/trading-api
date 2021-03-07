@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/google/uuid"
 	db "github.com/valverdethiago/trading-api/db/sqlc"
@@ -61,16 +60,7 @@ func (service *AccountService) isUsernameAlreadyTaken(Username string) bool {
 
 // AssertAccountExists Returns the account with the given ID
 func (service *AccountService) AssertAccountExists(ID uuid.UUID) (db.Account, error) {
-	var dbAccount db.Account
-	dbAccount, err := service.queries.GetAccountById(context.Background(), ID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return dbAccount, errors.New("No account found for the given id")
-		}
-		return dbAccount, err
-	}
-	log.Printf("Found account with id %s", ID)
-	return dbAccount, nil
+	return service.queries.GetAccountById(context.Background(), ID)
 }
 
 func (service *AccountService) createAddressForAccount(account db.Account, address *db.Address) (db.Address, error) {
