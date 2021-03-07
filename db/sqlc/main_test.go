@@ -13,15 +13,24 @@ import (
 var testQueries Querier
 
 func TestMain(m *testing.M) {
+	config := loadConfig()
+	conn := openDatabaseConnection(config)
+	testQueries = New(conn)
+	os.Exit(m.Run())
+}
+
+func loadConfig() util.Config {
 	config, err := util.LoadConfig("../..", "test")
 	if err != nil {
-		log.Fatal("Could not load application config", err)
+		log.Fatal("Error loading application config:", err)
 	}
+	return config
+}
+
+func openDatabaseConnection(config util.Config) *sql.DB {
 	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
-		log.Fatal("Cannot connect to the test database", err)
+		log.Fatal("Cannot connect to the database", err)
 	}
-	testQueries = New(conn)
-
-	os.Exit(m.Run())
+	return conn
 }
