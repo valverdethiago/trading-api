@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,11 +15,10 @@ const (
 )
 
 type tradeRequest struct {
-	Symbol   string         `json:"symbol"`
-	Quantity int64          `json:"quantity"`
-	Side     db.TradeSide   `json:"side"`
-	Price    float64        `json:"price"`
-	Status   db.TradeStatus `json:"status"`
+	Symbol   string       `json:"symbol" binding:"required"`
+	Quantity int64        `json:"quantity" binding:"required,min=1"`
+	Side     db.TradeSide `json:"side" binding:"required"`
+	Price    float64      `json:"price" binding:"required,gt=0"`
 }
 
 type tradeIDRequest struct {
@@ -31,7 +31,7 @@ type TradeController struct {
 }
 
 // NewTradeController builds a new intance of trade controller
-func NewTradeController(queries *db.Queries) *TradeController {
+func NewTradeController(queries db.Querier) *TradeController {
 	accountService := service.NewAccountService(queries)
 	return &TradeController{
 		service: service.NewTradeService(queries, accountService),
@@ -56,15 +56,24 @@ func (controller *TradeController) createTrade(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
+	accountUUID, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 	trade := db.Trade{
 		Symbol:   req.Symbol,
 		Side:     req.Side,
 		Price:    req.Price,
 		Quantity: req.Quantity,
 	}
-	dbTrade, err := controller.service.CreateTrade(trade, idReq.ID)
+	dbTrade, err := controller.service.CreateTrade(trade, accountUUID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
 		return
 	}
 	ctx.JSON(http.StatusCreated, dbTrade)
@@ -73,15 +82,24 @@ func (controller *TradeController) createTrade(ctx *gin.Context) {
 func (controller *TradeController) listTradesByAccount(ctx *gin.Context) {
 	idReq, err := getAccountIDRequest(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	dbTrades, err := controller.service.ListTradesByAccount(idReq.ID)
+	accountUUID, err := parseUUID(idReq.ID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, err)
 		return
 	}
-	ctx.JSON(http.StatusCreated, dbTrades)
+	dbTrades, err := controller.service.ListTradesByAccount(accountUUID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
+		return
+	}
+	ctx.JSON(http.StatusOK, dbTrades)
 }
 
 func (controller *TradeController) getTradeByIDAndAccountID(ctx *gin.Context) {
@@ -95,7 +113,17 @@ func (controller *TradeController) getTradeByIDAndAccountID(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	dbTrade, err := controller.service.FindByIDAndAccountID(tradeIDReq.ID, accountIDReq.ID)
+	accountUUID, err := parseUUID(accountIDReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	tradeUUID, err := parseUUID(tradeIDReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	dbTrade, err := controller.service.FindByIDAndAccountID(tradeUUID, accountUUID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -106,20 +134,34 @@ func (controller *TradeController) getTradeByIDAndAccountID(ctx *gin.Context) {
 func (controller *TradeController) cancelTradeByIDAndAccountID(ctx *gin.Context) {
 	accountIDReq, err := getAccountIDRequest(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 	tradeIDReq, err := getTradeIDRequest(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	dbTrade, err := controller.service.CancelTradeByIDAndAccountID(tradeIDReq.ID, accountIDReq.ID)
+	accountUUID, err := parseUUID(accountIDReq.ID)
 	if err != nil {
-		ctx.JSON(http.StatusConflict, gin.H{"message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	ctx.JSON(http.StatusCreated, dbTrade)
+	tradeUUID, err := parseUUID(tradeIDReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	dbTrade, err := controller.service.CancelTradeByIDAndAccountID(tradeUUID, accountUUID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+		} else {
+			ctx.JSON(http.StatusConflict, errorResponse(err))
+		}
+		return
+	}
+	ctx.JSON(http.StatusAccepted, dbTrade)
 }
 
 func getTradeRequest(ctx *gin.Context) (tradeRequest, error) {
@@ -134,7 +176,7 @@ func getTradeRequest(ctx *gin.Context) (tradeRequest, error) {
 func getTradeIDRequest(ctx *gin.Context) (tradeIDRequest, error) {
 	var req tradeIDRequest
 	var err error
-	if err = ctx.ShouldBindJSON(&req); err != nil {
+	if err = ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 	}
 	return req, err

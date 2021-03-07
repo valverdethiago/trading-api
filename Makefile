@@ -16,6 +16,9 @@ migrate-test-up:
 migrate-test-down:
 	migrate -path db/migrations -database "postgresql://postgres:golang@localhost:6432/trade_test?sslmode=disable" -verbose down
 
+mockgen-query:
+	mockgen -package mockdb -destination db/mock/query.go github.com/valverdethiago/trading-api/db/sqlc Querier
+
 sqlc:
 	sqlc generate
 
@@ -25,4 +28,4 @@ test:
 server:
 	go run main.go
 
-.PHONY: migrate-up migtrate-down postgresql-start postgresql-stop sqlc test server
+.PHONY: migrate-up migtrate-down postgresql-start postgresql-stop sqlc test server mockgen-query

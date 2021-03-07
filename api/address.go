@@ -13,21 +13,13 @@ const (
 	addressPath = "/accounts/:id/address"
 )
 
-type persistAddressRequest struct {
-	Name    string `json:"name" binding:"required"`
-	Street  string `json:"street" binding:"required"`
-	City    string `json:"city" binding:"required"`
-	State   string `json:"state" binding:"required"`
-	Zipcode string `json:"zipcode" binding:"required"`
-}
-
 // AddressController controller for address object
 type AddressController struct {
 	service *service.AddressService
 }
 
 // NewAddressController builds a new instance of account controller
-func NewAddressController(queries *db.Queries) *AddressController {
+func NewAddressController(queries db.Querier) *AddressController {
 	accountService := service.NewAccountService(queries)
 	return &AddressController{
 		service: service.NewAddressService(
@@ -46,6 +38,12 @@ func (controller *AddressController) setupRoutes(router *gin.Engine) {
 func (controller *AddressController) createAddressForAccount(ctx *gin.Context) {
 	idReq, err := getAccountIDRequest(ctx)
 	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	uuid, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 	req, err := getAddressRequest(ctx)
@@ -59,9 +57,13 @@ func (controller *AddressController) createAddressForAccount(ctx *gin.Context) {
 		State:   db.State(req.State),
 		Zipcode: req.Zipcode,
 	}
-	dbAddress, err := controller.service.CreateAddressForAccount(idReq.ID, address)
+	dbAddress, err := controller.service.CreateAddressForAccount(uuid, address)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+		} else {
+			ctx.JSON(http.StatusConflict, errorResponse(err))
+		}
 		return
 	}
 	ctx.JSON(http.StatusCreated, dbAddress)
@@ -73,6 +75,11 @@ func (controller *AddressController) updateAddressForAccount(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
+	uuid, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 	req, err := getAddressRequest(ctx)
 	if err != nil {
 		return
@@ -84,10 +91,15 @@ func (controller *AddressController) updateAddressForAccount(ctx *gin.Context) {
 		State:   db.State(req.State),
 		Zipcode: req.Zipcode,
 	}
-	dbAddress, err := controller.service.UpdateAddressForAccount(idReq.ID, address)
+	dbAddress, err := controller.service.UpdateAddressForAccount(uuid, address)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
 	}
 	ctx.JSON(http.StatusCreated, dbAddress)
 	return
@@ -98,9 +110,18 @@ func (controller *AddressController) getAddressByAccountID(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	dbAddress, err := controller.service.GetAddressByAccountID(idReq.ID)
-	if err != nil && err == sql.ErrNoRows {
-		ctx.JSON(http.StatusNoContent, gin.H{"message": "The account doesn't have an address yet."})
+	uuid, err := parseUUID(idReq.ID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	dbAddress, err := controller.service.GetAddressByAccountID(uuid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
 		return
 	}
 	ctx.JSON(http.StatusOK, dbAddress)
@@ -116,8 +137,8 @@ func getAccountIDRequest(ctx *gin.Context) (accountIDRequest, error) {
 	return idReq, err
 }
 
-func getAddressRequest(ctx *gin.Context) (addressRequest, error) {
-	var req addressRequest
+func getAddressRequest(ctx *gin.Context) (AddressRequest, error) {
+	var req AddressRequest
 	var err error
 	if err = ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))

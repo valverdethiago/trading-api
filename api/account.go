@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,13 +18,15 @@ type accountIDRequest struct {
 	ID string `uri:"id" binding:"required"`
 }
 
-type createAccountRequest struct {
+// CreateAccountRequest json request to create account
+type CreateAccountRequest struct {
 	Username string          `json:"username" binding:"required"`
 	Email    string          `json:"email" binding:"required"`
-	Address  *addressRequest `json:"address" binding:"omitempty"`
+	Address  *AddressRequest `json:"address" binding:"omitempty"`
 }
 
-type addressRequest struct {
+// AddressRequest json request to create address
+type AddressRequest struct {
 	Name    string `json:"name" binding:"required"`
 	Street  string `json:"street" binding:"required"`
 	City    string `json:"city" binding:"required"`
@@ -37,7 +40,7 @@ type AccountController struct {
 }
 
 // NewAccountController builds a new instance of account controller
-func NewAccountController(queries *db.Queries) *AccountController {
+func NewAccountController(queries db.Querier) *AccountController {
 	return &AccountController{
 		service: service.NewAccountService(queries),
 	}
@@ -51,7 +54,7 @@ func (controller *AccountController) setupRoutes(router *gin.Engine) {
 }
 
 func (controller *AccountController) createAccount(ctx *gin.Context) {
-	var req createAccountRequest
+	var req CreateAccountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -72,7 +75,7 @@ func (controller *AccountController) createAccount(ctx *gin.Context) {
 	}
 	dbAccount, _, err := controller.service.CreateAccount(account, address)
 	if err != nil {
-		ctx.JSON(http.StatusConflict, gin.H{"message": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusCreated, dbAccount)
@@ -81,7 +84,7 @@ func (controller *AccountController) createAccount(ctx *gin.Context) {
 
 func (controller *AccountController) listAccounts(ctx *gin.Context) {
 	accounts, err := controller.service.ListAccounts()
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -102,9 +105,18 @@ func (controller *AccountController) findAccountByID(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	account, err := controller.service.GetAccountByID(req.ID)
+	uuid, err := parseUUID(req.ID)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": "No account found for this id"})
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	account, err := controller.service.GetAccountByID(uuid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, gin.H{"message": "No account found for this id"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
 		return
 	}
 	ctx.JSON(http.StatusOK, account)
