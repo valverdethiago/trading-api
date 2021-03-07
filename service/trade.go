@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/google/uuid"
@@ -17,7 +18,8 @@ type TradeService struct {
 // NewTradeService creates a new TradeService instance
 func NewTradeService(queries db.Querier, accountService *AccountService) *TradeService {
 	return &TradeService{
-		queries: queries,
+		queries:        queries,
+		accountService: accountService,
 	}
 }
 
@@ -45,7 +47,11 @@ func (service *TradeService) ListTradesByAccount(accountUUID uuid.UUID) ([]db.Tr
 	if err != nil {
 		return dbTrades, err
 	}
-	return service.queries.ListTradesByAccount(context.Background(), dbAccount.AccountUuid)
+	dbTrades, err = service.queries.ListTradesByAccount(context.Background(), dbAccount.AccountUuid)
+	if err != nil && err == sql.ErrNoRows {
+		return make([]db.Trade, 0), nil
+	}
+	return dbTrades, err
 }
 
 //FindByIDAndAccountID finds a trade by its ID and account ID
@@ -85,7 +91,7 @@ func (service *TradeService) assertTradeExistsAndBelongToTheAccount(ID uuid.UUID
 	if err != nil {
 		return dbTrade, err
 	}
-	if dbAccount.AccountUuid != dbTrade.TradeUuid {
+	if dbAccount.AccountUuid != dbTrade.AccountUuid {
 		return dbTrade, errors.New("The trade is not attached to the given account")
 	}
 	return dbTrade, err
